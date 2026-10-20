@@ -1,0 +1,16 @@
+---
+# Default variables for claim_portal role
+app_name: "claim-portal"
+app_version: "1.0.0"
+app_user: "claimapp"
+app_group: "claimapp"
+app_port: 8080
+java_package: "openjdk-21-jdk-headless"
+install_dir: "/opt/claim-portal"
+releases_dir: "/opt/claim-portal/releases"
+shared_dir: "/opt/claim-portal/shared"
+current_symlink: "/opt/claim-portal/current"
+log_dir: "/var/log/claim-portal"
+conf_dir: "/etc/claim-portal"
+health_check_url: "http://localhost:{{ app_port }}/actuator/health"
+java_opts: "-Xms256m -Xmx512m -XX:+UseG1GC"

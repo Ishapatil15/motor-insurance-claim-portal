@@ -1,0 +1,83 @@
+---
+# ==============================================================================
+# Ansible Tasks: Motor Insurance Claim Portal Node Provisioning
+# ==============================================================================
+
+- name: Update apt cache and install prerequisite packages
+  ansible.builtin.apt:
+    name:
+      - "{{ java_package }}"
+      - curl
+      - git
+      - ufw
+      - jq
+    state: present
+    update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Install prerequisite packages on RedHat/CentOS
+  ansible.builtin.yum:
+    name:
+      - java-21-openjdk-headless
+      - curl
+      - git
+      - firewalld
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Create application system group
+  ansible.builtin.group:
+    name: "{{ app_group }}"
+    state: present
+    system: true
+
+- name: Create application dedicated service user
+  ansible.builtin.user:
+    name: "{{ app_user }}"
+    group: "{{ app_group }}"
+    home: "{{ install_dir }}"
+    shell: /usr/sbin/nologin
+    system: true
+    create_home: false
+    state: present
+
+- name: Create required application directory structure
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: "0755"
+  loop:
+    - "{{ install_dir }}"
+    - "{{ releases_dir }}"
+    - "{{ shared_dir }}"
+    - "{{ log_dir }}"
+    - "{{ conf_dir }}"
+
+- name: Deploy application.properties from Jinja2 template
+  ansible.builtin.template:
+    src: application.properties.j2
+    dest: "{{ conf_dir }}/application.properties"
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: "0640"
+  notify: Restart claim-portal service
+
+- name: Deploy systemd service unit file
+  ansible.builtin.template:
+    src: claim-portal.service.j2
+    dest: /etc/systemd/system/claim-portal.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd daemon
+    - Restart claim-portal service
+
+- name: Configure firewall to allow HTTP traffic on port {{ app_port }}
+  community.general.ufw:
+    rule: allow
+    port: "{{ app_port }}"
+    proto: tcp
+  when: ansible_os_family == "Debian"

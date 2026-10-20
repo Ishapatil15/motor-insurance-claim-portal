@@ -1,0 +1,10 @@
+---
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart claim-portal service
+  ansible.builtin.systemd:
+    name: claim-portal
+    state: restarted
+    enabled: true

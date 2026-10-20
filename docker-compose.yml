@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  claim-portal-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: motorclaim/portal:1.0.0
+    container_name: motorclaim-portal-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://claim-db:3306/claimdb?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=claimuser
+      - SPRING_DATASOURCE_PASSWORD=claimsecret
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      claim-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+    networks:
+      - claim-network
+
+  claim-db:
+    image: mysql:8.0
+    container_name: motorclaim-mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootsecretpassword
+      MYSQL_DATABASE: claimdb
+      MYSQL_USER: claimuser
+      MYSQL_PASSWORD: claimsecret
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootsecretpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - claim-network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  claim-network:
+    driver: bridge

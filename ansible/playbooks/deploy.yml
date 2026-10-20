@@ -1,0 +1,55 @@
+---
+# ==============================================================================
+# Automated Application Deployment Playbook with Health Verification
+# ==============================================================================
+- name: Deploy Motor Insurance Claim Portal Release
+  hosts: claim_servers
+  become: true
+  vars:
+    release_version: "{{ version | default('1.0.0') }}"
+    artifact_src: "{{ artifact_path | default('../../target/claim-portal.jar') }}"
+
+  tasks:
+    - name: Create release directory for version {{ release_version }}
+      ansible.builtin.file:
+        path: "{{ releases_dir }}/{{ release_version }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0755"
+
+    - name: Copy application JAR artifact to release directory
+      ansible.builtin.copy:
+        src: "{{ artifact_src }}"
+        dest: "{{ releases_dir }}/{{ release_version }}/claim-portal.jar"
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0644"
+
+    - name: Atomic update of current symlink to new release
+      ansible.builtin.file:
+        src: "{{ releases_dir }}/{{ release_version }}"
+        dest: "{{ current_symlink }}"
+        state: link
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+
+    - name: Restart claim-portal systemd service
+      ansible.builtin.systemd:
+        name: claim-portal
+        state: restarted
+        enabled: true
+
+    - name: Wait for service to initialize and verify health probe
+      ansible.builtin.uri:
+        url: "{{ health_check_url }}"
+        status_code: 200
+        return_content: true
+      register: health_check
+      until: health_check.status == 200 and 'UP' in health_check.content
+      retries: 10
+      delay: 3
+
+    - name: Display successful deployment confirmation
+      ansible.builtin.debug:
+        msg: "SUCCESS: Motor Insurance Claim Portal v{{ release_version }} deployed and verified healthy on port {{ app_port }}."
