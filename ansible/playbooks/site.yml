@@ -1,0 +1,9 @@
+---
+# ==============================================================================
+# Master Site Playbook: Motor Insurance Claim Portal Node Provisioning
+# ==============================================================================
+- name: Provision Motor Insurance Claim Portal Target Node
+  hosts: claim_servers
+  become: true
+  roles:
+    - claim_portal

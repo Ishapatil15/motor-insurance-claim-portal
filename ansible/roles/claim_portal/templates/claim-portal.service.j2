@@ -1,0 +1,23 @@
+[Unit]
+Description=Motor Insurance Claim Portal Spring Boot Service
+After=network.target syslog.target
+
+[Service]
+Type=simple
+User={{ app_user }}
+Group={{ app_group }}
+WorkingDirectory={{ current_symlink }}
+ExecStart=/usr/bin/java {{ java_opts }} -jar {{ current_symlink }}/claim-portal.jar --server.port={{ app_port }} --spring.config.additional-location=file:{{ conf_dir }}/application.properties
+Restart=always
+RestartSec=10
+SuccessExitStatus=143
+StandardOutput=append:{{ log_dir }}/catalina.out
+StandardError=append:{{ log_dir }}/error.log
+
+# Security Sandboxing
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

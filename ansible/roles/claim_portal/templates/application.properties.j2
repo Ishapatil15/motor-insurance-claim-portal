@@ -1,0 +1,16 @@
+# Server Configuration managed by Ansible
+server.port={{ app_port }}
+spring.application.name={{ app_name }}
+
+# Production Logging Configuration
+logging.file.name={{ log_dir }}/application.log
+logging.level.com.motorclaim.portal=INFO
+logging.level.org.springframework.web=INFO
+
+# Actuator Health Probe Settings
+management.endpoints.web.exposure.include=health,info,metrics
+management.endpoint.health.show-details=always
+
+# Reviewer Workbench Features
+app.features.reviewer-workbench.enabled=true
+app.features.reviewer-workbench.maintenance-mode=false
