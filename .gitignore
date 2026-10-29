@@ -54,6 +54,7 @@ out/
 # OS Files
 .DS_Store
 Thumbs.db
+~$*
 
 # Test reports and screenshots
 target/screenshots/
